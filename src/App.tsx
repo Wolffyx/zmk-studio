@@ -1,322 +1,115 @@
-import { AppHeader } from "./AppHeader";
+import React, { useEffect, useState } from "react"
+import { ConnectModal } from "./components/Modals/ConnectModal.tsx"
+import type { RpcTransport } from "@zmkfirmware/zmk-studio-ts-client/transport/index"
+import { useEmitter, useSub } from "./helpers/usePubSub.ts"
+import { LockState } from "@zmkfirmware/zmk-studio-ts-client/core"
+import { UnlockModal } from "./components/UnlockModal.tsx"
+import { connect } from "./services/RpcConnectionService.ts"
+import useConnectionStore from "./stores/ConnectionStore.ts"
+import undoRedoStore from "./stores/UndoRedoStore.ts"
+import { KeyboardEditor } from "./components/KeyboardEditor.tsx"
+import { Drawer } from "@/Layout/Drawer.tsx"
+import { SidebarInset, SidebarProvider } from "./components/ui/sidebar.tsx"
+import { ThemeProvider } from "@/providers/ThemeProvider.tsx"
+import { Toaster } from "@/components/ui/sonner.tsx"
+import { Header } from "@/Layout/Header.tsx"
+import { Footer } from "@/Layout/Footer.tsx"
+import { toast } from "sonner"
+import { callRemoteProcedureControl } from "@/services/CallRemoteProcedureControl.ts"
 
-import { create_rpc_connection } from "@zmkfirmware/zmk-studio-ts-client";
-import { call_rpc } from "./rpc/logging";
+function App () {
+	const { connection, setConnection, setDeviceName, setLockState } = useConnectionStore()
+	const { reset } = undoRedoStore()
+	const [ connectionAbort ] = useState( new AbortController() )
+	const { subscribe } = useEmitter()
 
-import type { Notification } from "@zmkfirmware/zmk-studio-ts-client/studio";
-import { ConnectionState, ConnectionContext } from "./rpc/ConnectionContext";
-import { Dispatch, useCallback, useEffect, useState } from "react";
-import { ConnectModal, TransportFactory } from "./ConnectModal";
+	useEffect( () => {
+		return subscribe( "rpc_notification.core.lockStateChanged", ( data ) => {
+			console.log( "lockStateChanged:", data )
+			setLockState( data )
+		} )
+	}, [ subscribe ] )
 
-import type { RpcTransport } from "@zmkfirmware/zmk-studio-ts-client/transport/index";
-import { connect as gatt_connect } from "@zmkfirmware/zmk-studio-ts-client/transport/gatt";
-import { connect as serial_connect } from "@zmkfirmware/zmk-studio-ts-client/transport/serial";
-import {
-  connect as tauri_ble_connect,
-  list_devices as ble_list_devices,
-} from "./tauri/ble";
-import {
-  connect as tauri_serial_connect,
-  list_devices as serial_list_devices,
-} from "./tauri/serial";
-import Keyboard from "./keyboard/Keyboard";
-import { UndoRedoContext, useUndoRedo } from "./undoRedo";
-import { usePub, useSub } from "./usePubSub";
-import { LockState } from "@zmkfirmware/zmk-studio-ts-client/core";
-import { LockStateContext } from "./rpc/LockStateContext";
-import { UnlockModal } from "./UnlockModal";
-import { valueAfter } from "./misc/async";
-import { AppFooter } from "./AppFooter";
-import { AboutModal } from "./AboutModal";
-import { LicenseNoticeModal } from "./misc/LicenseNoticeModal";
 
-declare global {
-  interface Window {
-    __TAURI_INTERNALS__?: object;
-  }
+	useSub('rpc_notification.core.lockStateChanged', (ls) => {
+	    console.log(ls)
+	    setLockState(ls)
+	})
+
+	useEffect( () => {
+		console.log( connection )
+		if ( !connection ) {
+			reset()
+			setLockState( LockState.ZMK_STUDIO_CORE_LOCK_STATE_LOCKED )
+		}
+
+		updateLockState()
+	}, [ connection, setLockState ] )
+
+	async function updateLockState () {
+		if ( !connection ) return
+
+		const locked_resp = await callRemoteProcedureControl({
+			core: { getLockState: true }
+		} )
+		console.log( connection )
+		// console.log(locked_resp, locked_resp.core?.getLockState)
+		setLockState(
+			locked_resp.core?.getLockState ||
+			LockState.ZMK_STUDIO_CORE_LOCK_STATE_LOCKED
+		)
+	}
+
+	const onConnect = async ( t: RpcTransport, communication: "serial" | "ble" ) => {
+		const connection = await connect(
+			t,
+			setConnection,
+			setDeviceName,
+			connectionAbort.signal,
+			communication
+		)
+		if ( typeof connection === "string" ) {
+			toast.error("Failed to connect to the selected device.", {
+				description: connection,
+			})
+		}
+	}
+
+	return (
+		<ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+			{ connection ? (
+				<>
+					<UnlockModal />
+					<SidebarProvider style={
+						{
+							"--sidebar-width": "calc(var(--spacing) * 72)",
+							"--header-height": "calc(var(--spacing) * 12)",
+							"--footer-height": "calc(var(--spacing) * 8)",
+						} as React.CSSProperties
+					}>
+
+						<Drawer />
+						<SidebarInset>
+							<Header/>
+							<KeyboardEditor />
+							<Footer />
+						</SidebarInset>
+					</SidebarProvider>
+				</>
+			) : (
+				<ConnectModal
+					open={ !connection }
+					onTransportCreated={ onConnect }
+					usedFor="connectModal"
+					modalButton={ "" }
+					opened={ !connection }
+					hideCloseButton
+					hideXButton
+				/>
+			) }
+			<Toaster richColors position="top-center" />
+		</ThemeProvider>
+	)
 }
 
-const TRANSPORTS: TransportFactory[] = [
-  navigator.serial && { label: "USB", connect: serial_connect },
-  ...(navigator.bluetooth && navigator.userAgent.indexOf("Linux") >= 0
-    ? [{ label: "BLE", connect: gatt_connect }]
-    : []),
-  ...(window.__TAURI_INTERNALS__
-    ? [
-        {
-          label: "BLE",
-          isWireless: true,
-          pick_and_connect: {
-            connect: tauri_ble_connect,
-            list: ble_list_devices,
-          },
-        },
-      ]
-    : []),
-  ...(window.__TAURI_INTERNALS__
-    ? [
-        {
-          label: "USB",
-          pick_and_connect: {
-            connect: tauri_serial_connect,
-            list: serial_list_devices,
-          },
-        },
-      ]
-    : []),
-].filter((t) => t !== undefined);
-
-async function listen_for_notifications(
-  notification_stream: ReadableStream<Notification>,
-  signal: AbortSignal
-): Promise<void> {
-  let reader = notification_stream.getReader();
-  const onAbort = () => {
-    reader.cancel();
-    reader.releaseLock();
-  };
-  signal.addEventListener("abort", onAbort, { once: true });
-  do {
-    let pub = usePub();
-
-    try {
-      let { done, value } = await reader.read();
-      if (done) {
-        break;
-      }
-
-      if (!value) {
-        continue;
-      }
-
-      console.log("Notification", value);
-      pub("rpc_notification", value);
-
-      const subsystem = Object.entries(value).find(
-        ([_k, v]) => v !== undefined
-      );
-      if (!subsystem) {
-        continue;
-      }
-
-      const [subId, subData] = subsystem;
-      const event = Object.entries(subData).find(([_k, v]) => v !== undefined);
-
-      if (!event) {
-        continue;
-      }
-
-      const [eventName, eventData] = event;
-      const topic = ["rpc_notification", subId, eventName].join(".");
-
-      pub(topic, eventData);
-    } catch (e) {
-      signal.removeEventListener("abort", onAbort);
-      reader.releaseLock();
-      throw e;
-    }
-  } while (true);
-
-  signal.removeEventListener("abort", onAbort);
-  reader.releaseLock();
-  notification_stream.cancel();
-}
-
-async function connect(
-  transport: RpcTransport,
-  setConn: Dispatch<ConnectionState>,
-  setConnectedDeviceName: Dispatch<string | undefined>,
-  signal: AbortSignal
-) {
-  let conn = await create_rpc_connection(transport, { signal });
-
-  let details = await Promise.race([
-    call_rpc(conn, { core: { getDeviceInfo: true } })
-      .then((r) => r?.core?.getDeviceInfo)
-      .catch((e) => {
-        console.error("Failed first RPC call", e);
-        return undefined;
-      }),
-    valueAfter(undefined, 1000),
-  ]);
-
-  if (!details) {
-    // TODO: Show a proper toast/alert not using `window.alert`
-    window.alert("Failed to connect to the chosen device");
-    return;
-  }
-
-  listen_for_notifications(conn.notification_readable, signal)
-    .then(() => {
-      setConnectedDeviceName(undefined);
-      setConn({ conn: null });
-    })
-    .catch((_e) => {
-      setConnectedDeviceName(undefined);
-      setConn({ conn: null });
-    });
-
-  setConnectedDeviceName(details.name);
-  setConn({ conn });
-}
-
-function App() {
-  const [conn, setConn] = useState<ConnectionState>({ conn: null });
-  const [connectedDeviceName, setConnectedDeviceName] = useState<
-    string | undefined
-  >(undefined);
-  const [doIt, undo, redo, canUndo, canRedo, reset] = useUndoRedo();
-  const [showAbout, setShowAbout] = useState(false);
-  const [showLicenseNotice, setShowLicenseNotice] = useState(false);
-  const [connectionAbort, setConnectionAbort] = useState(new AbortController());
-
-  const [lockState, setLockState] = useState<LockState>(
-    LockState.ZMK_STUDIO_CORE_LOCK_STATE_LOCKED
-  );
-
-  useSub("rpc_notification.core.lockStateChanged", (ls) => {
-    setLockState(ls);
-  });
-
-  useEffect(() => {
-    if (!conn) {
-      reset();
-      setLockState(LockState.ZMK_STUDIO_CORE_LOCK_STATE_LOCKED);
-    }
-
-    async function updateLockState() {
-      if (!conn.conn) {
-        return;
-      }
-
-      let locked_resp = await call_rpc(conn.conn, {
-        core: { getLockState: true },
-      });
-
-      setLockState(
-        locked_resp.core?.getLockState ||
-          LockState.ZMK_STUDIO_CORE_LOCK_STATE_LOCKED
-      );
-    }
-
-    updateLockState();
-  }, [conn, setLockState]);
-
-  const save = useCallback(() => {
-    async function doSave() {
-      if (!conn.conn) {
-        return;
-      }
-
-      let resp = await call_rpc(conn.conn, { keymap: { saveChanges: true } });
-      if (!resp.keymap?.saveChanges || resp.keymap?.saveChanges.err) {
-        console.error("Failed to save changes", resp.keymap?.saveChanges);
-      }
-    }
-
-    doSave();
-  }, [conn]);
-
-  const discard = useCallback(() => {
-    async function doDiscard() {
-      if (!conn.conn) {
-        return;
-      }
-
-      let resp = await call_rpc(conn.conn, {
-        keymap: { discardChanges: true },
-      });
-      if (!resp.keymap?.discardChanges) {
-        console.error("Failed to discard changes", resp);
-      }
-
-      reset();
-      setConn({ conn: conn.conn });
-    }
-
-    doDiscard();
-  }, [conn]);
-
-  const resetSettings = useCallback(() => {
-    async function doReset() {
-      if (!conn.conn) {
-        return;
-      }
-
-      let resp = await call_rpc(conn.conn, {
-        core: { resetSettings: true },
-      });
-      if (!resp.core?.resetSettings) {
-        console.error("Failed to settings reset", resp);
-      }
-
-      reset();
-      setConn({ conn: conn.conn });
-    }
-
-    doReset();
-  }, [conn]);
-
-  const disconnect = useCallback(() => {
-    async function doDisconnect() {
-      if (!conn.conn) {
-        return;
-      }
-
-      await conn.conn.request_writable.close();
-      connectionAbort.abort("User disconnected");
-      setConnectionAbort(new AbortController());
-    }
-
-    doDisconnect();
-  }, [conn]);
-
-  const onConnect = useCallback(
-    (t: RpcTransport) => {
-      const ac = new AbortController();
-      setConnectionAbort(ac);
-      connect(t, setConn, setConnectedDeviceName, ac.signal);
-    },
-    [setConn, setConnectedDeviceName, setConnectedDeviceName]
-  );
-
-  return (
-    <ConnectionContext.Provider value={conn}>
-      <LockStateContext.Provider value={lockState}>
-        <UndoRedoContext.Provider value={doIt}>
-          <UnlockModal />
-          <ConnectModal
-            open={!conn.conn}
-            transports={TRANSPORTS}
-            onTransportCreated={onConnect}
-          />
-          <AboutModal open={showAbout} onClose={() => setShowAbout(false)} />
-          <LicenseNoticeModal
-            open={showLicenseNotice}
-            onClose={() => setShowLicenseNotice(false)}
-          />
-          <div className="bg-base-100 text-base-content h-full max-h-[100vh] w-full max-w-[100vw] inline-grid grid-cols-[auto] grid-rows-[auto_1fr_auto] overflow-hidden">
-            <AppHeader
-              connectedDeviceLabel={connectedDeviceName}
-              canUndo={canUndo}
-              canRedo={canRedo}
-              onUndo={undo}
-              onRedo={redo}
-              onSave={save}
-              onDiscard={discard}
-              onDisconnect={disconnect}
-              onResetSettings={resetSettings}
-            />
-            <Keyboard />
-            <AppFooter
-              onShowAbout={() => setShowAbout(true)}
-              onShowLicenseNotice={() => setShowLicenseNotice(true)}
-            />
-          </div>
-        </UndoRedoContext.Provider>
-      </LockStateContext.Provider>
-    </ConnectionContext.Provider>
-  );
-}
-
-export default App;
+export default App

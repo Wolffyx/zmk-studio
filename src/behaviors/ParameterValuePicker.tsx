@@ -1,85 +1,112 @@
-import { BehaviorParameterValueDescription } from "@zmkfirmware/zmk-studio-ts-client/behaviors";
-import { HidUsagePicker } from "./HidUsagePicker";
+import { BehaviorParameterValueDescription } from '@zmkfirmware/zmk-studio-ts-client/behaviors';
+import { KeysLayout } from '../components/keycodes/KeysLayout';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select.tsx"
+import { Label } from "@/components/ui/label.tsx"
+import { Input } from "@/components/ui/input.tsx"
 
 export interface ParameterValuePickerProps {
-  value?: number;
-  values: BehaviorParameterValueDescription[];
-  layers: { id: number; name: string }[];
-  onValueChanged: (value?: number) => void;
+    value?: number;
+    values: BehaviorParameterValueDescription[];
+    layers: { id: number; name: string }[];
+    onValueChanged: (value?: number) => void;
+    onKeysLayoutActive?: (isActive: boolean) => void;
+    onKeySelected?: (key: number | undefined) => void;
+    onModifiersChanged?: (modifiers: any[]) => void;
 }
 
-export const ParameterValuePicker = ({
-  value,
-  values,
-  layers,
-  onValueChanged,
-}: ParameterValuePickerProps) => {
-  if (values.length == 0) {
-    return <></>;
-  } else if (values.every((v) => v.constant !== undefined)) {
-    return (
-      <div>
-        <select
-          value={value}
-          className="h-8 rounded"
-          onChange={(e) => onValueChanged(parseInt(e.target.value))}
-        >
-          {values.map((v) => (
-            <option value={v.constant}>{v.name}</option>
-          ))}
-        </select>
-      </div>
-    );
-  } else if (values.length == 1) {
-    if (values[0].range) {
-      return (
-        <div>
-          <label>{values[0].name}: </label>
-          <input
-            type="number"
-            min={values[0].range.min}
-            max={values[0].range.max}
-            value={value}
-            onChange={(e) => onValueChanged(parseInt(e.target.value))}
-          />
-        </div>
-      );
-    } else if (values[0].hidUsage) {
-      return (
-        <HidUsagePicker
-          onValueChanged={onValueChanged}
-          label={values[0].name}
-          value={value}
-          usagePages={[
-            { id: 7, min: 4, max: values[0].hidUsage.keyboardMax },
-            { id: 12, max: values[0].hidUsage.consumerMax },
-          ]}
-        />
-      );
-    } else if (values[0].layerId) {
-      return (
-        <div>
-          <label>{values[0].name}: </label>
-          <select
-            value={value}
-            className="h-8 rounded"
-            onChange={(e) => onValueChanged(parseInt(e.target.value))}
-          >
-            {layers.map(({ name, id }) => (
-              <option value={id}>{name}</option>
-            ))}
-          </select>
-        </div>
-      );
-    }
-  } else {
-    console.log("Not sure how to handle", values);
-    return (
-      <>
-        <p>Some composite?</p>
-      </>
-    );
-  }
+const ConstantValuePicker = ({ value, values, onValueChanged }: ParameterValuePickerProps) => (
+    <>
+        {/*<Label htmlFor="constantValuePicker">Select value</Label>*/}
+        <Select onValueChange={(e) => {
+            console.log(e)
+            onValueChanged( parseInt( e ) )
+        }} value={value?.toString()}>
+            <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Constant Value Picker" />
+            </SelectTrigger>
+            <SelectContent>
+                {values.map((v) => (
+                    // <option key={v.constant} value={v.constant}>{v.name}</option>
+                    <SelectItem key={v.constant} value={v.constant.toString()}>{v.name}</SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+    </>
+);
 
-  return <></>;
+const RangeValuePicker = ({ value, values, onValueChanged }: ParameterValuePickerProps) => (
+    <>
+        <Label htmlFor='rangeValuePicker'>{values[0].name}: </Label>
+        <Input
+            id='rangeValuePicker'
+            type="number"
+            min={values[0].range?.min}
+            max={values[0].range?.max}
+            value={value}
+            onChange={(e) => onValueChanged(parseInt(e.target.value))}
+        />
+    </>
+);
+
+const LayerValuePicker = ({ value, values, layers, onValueChanged }: ParameterValuePickerProps) => (
+    <>
+        <Label htmlFor="layerValuePicker">{values[0].name}:</Label>
+        <Select onValueChange={(e) => onValueChanged( parseInt( e ) )} value={value?.toString()}>
+            <SelectTrigger id='layerValuePicker' className="w-[180px]">
+                <SelectValue placeholder="Constant Value Picker" />
+            </SelectTrigger>
+            <SelectContent>
+                {layers.map(({ id, name }) => (
+                    <SelectItem key={id} value={id.toString()}>{name}</SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+    </>
+);
+
+export const ParameterValuePicker = ({ value, values, layers, onValueChanged, onKeysLayoutActive, onKeySelected, onModifiersChanged }: ParameterValuePickerProps) => {
+    // console.log("ParameterValuePicker values:", { value, values });
+
+    if (values.length === 0) {
+        onKeysLayoutActive?.(false);
+        return null;
+    }
+
+    if (values.every(v => v.constant !== undefined)) {
+        console.log("ConstantValuePicker", values);
+        onKeysLayoutActive?.(false);
+        return <ConstantValuePicker value={value} values={values} onValueChanged={onValueChanged} layers={layers} />;
+    }
+
+    if (values.length === 1) {
+        if (values[0].range) {
+            console.log("range", values[0].range);
+            onKeysLayoutActive?.(false);
+            return <RangeValuePicker value={value} values={values} onValueChanged={onValueChanged} layers={layers} />;
+        }
+
+        if (values[0].hidUsage) {
+            console.log("KeysLayout with modifier support", values[0].hidUsage);
+            onKeysLayoutActive?.(true);
+            return (
+                <KeysLayout
+                    onValueChanged={onValueChanged}
+                    label={values[0].name}
+                    value={value}
+                    onKeySelected={onKeySelected}
+                    onModifiersChanged={onModifiersChanged}
+                />
+            );
+        }
+
+        if (values[0].layerId) {
+            console.log("LayerValuePicker", values[0].layerId);
+            onKeysLayoutActive?.(false);
+            return <LayerValuePicker value={value} values={values} onValueChanged={onValueChanged} layers={layers} />;
+        }
+    }
+
+    console.log("Unhandled value structure:", values);
+    onKeysLayoutActive?.(false);
+    return <p>Unsupported parameter configuration.</p>;
 };

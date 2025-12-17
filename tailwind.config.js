@@ -1,6 +1,8 @@
-/** @type {import('tailwindcss').Config} */
+/** @type {import("tailwindcss").Config} */
 import trac from "tailwindcss-react-aria-components";
 import contQueries from "@tailwindcss/container-queries";
+import defaultTheme from "tailwindcss/defaultTheme";
+import daisyui from "daisyui";
 
 export default {
   content: ["./index.html", "./download.html", "./src/**/*.{js,ts,jsx,tsx}"],
@@ -10,7 +12,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Inter", "system-ui"],
+        // sans: ["Inter", "system-ui"],
+        sans: ["InterVariable", ...defaultTheme.fontFamily.sans],
       },
       colors: {
         primary:
@@ -32,5 +35,5 @@ export default {
       keycap: ["Inter", "system-ui"],
     },
   },
-  plugins: [contQueries, trac({ prefix: "rac" })],
+  plugins: [contQueries, trac({ prefix: "rac" }), daisyui],
 };

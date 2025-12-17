@@ -78,6 +78,11 @@ pub async fn serial_list_devices(app_handle: AppHandle) -> Result<Vec<super::com
                 Some(super::commands::AvailableDevice {
                     id: pi.port_name,
                     label: u.product.unwrap_or("Unnamed device".to_string()),
+                    manufacturer: u.manufacturer,
+                    serial_number: u.serial_number,
+                    vid: Some(u.vid),
+                    pid: Some(u.pid),
+                    communication: "serial".to_string(),
                 })
             } else {
                 None
@@ -92,6 +97,11 @@ pub async fn serial_list_devices(app_handle: AppHandle) -> Result<Vec<super::com
                     candidates.push(super::commands::AvailableDevice {
                         id: path.to_string(),
                         label: format!("CLI Port: {path}").to_string(),
+                        manufacturer: None,
+                        serial_number: None,
+                        vid: None,
+                        pid: None,
+                        communication: "CLI".to_string(),
                     })
                 }
             }
