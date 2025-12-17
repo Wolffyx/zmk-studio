@@ -9,12 +9,15 @@ interface ConnectionState {
     communication: 'serial' | 'ble' | null;
     deviceName: string | null;
     lockState: LockState;
+    connectionAbort: AbortController;
     setConnection: (connection: RpcConnection | null, communication?: 'serial' | 'ble') => void;
     setDeviceName: (name: string | null) => void;
     setLockState: (state: LockState) => void;
+    setConnectionAbort: (abort: AbortController) => void;
     resetConnection: () => void;
     showConnectionModal: boolean;
     setShowConnectionModal: (visible: boolean) => void;
+    disconnect: () => Promise<void>;
 }
 
 // Middleware to check if a connection exists and show the modal if not
@@ -37,22 +40,34 @@ const connectionMiddleware = (config) => (
 // Create Zustand store with middleware and persistence
 const useConnectionStore = create<ConnectionState>()(
     devtools(
-        connectionMiddleware((set) => ({
+        connectionMiddleware((set, get) => ({
             connection: null,
             communication: null,
             deviceName: null,
             lockState: LockState.ZMK_STUDIO_CORE_LOCK_STATE_LOCKED,
+            connectionAbort: new AbortController(),
             setConnection: (connection, communication = null) => set({ connection, communication }),
             setDeviceName: (name) => set({ deviceName: name }),
             setLockState: (state) => set({ lockState: state }),
-            resetConnection: () => set({ 
-                connection: null, 
-                communication: null, 
+            setConnectionAbort: (abort) => set({ connectionAbort: abort }),
+            resetConnection: () => set({
+                connection: null,
+                communication: null,
                 deviceName: null,
-                lockState: LockState.ZMK_STUDIO_CORE_LOCK_STATE_LOCKED 
+                lockState: LockState.ZMK_STUDIO_CORE_LOCK_STATE_LOCKED
             }),
             showConnectionModal: false,
             setShowConnectionModal: (visible) => set({ showConnectionModal: visible }),
+            disconnect: async () => {
+                const { connection, connectionAbort } = get();
+                if (!connection) {
+                    return;
+                }
+
+                await connection.request_writable.close();
+                connectionAbort.abort('User disconnected');
+                set({ connectionAbort: new AbortController() });
+            },
         })),
     ),
 )
