@@ -1,11 +1,10 @@
-import { useCallback, useState } from 'react'
-import { useEmitter } from '../helpers/usePubSub.ts'
+import { useCallback } from 'react'
 import { LockState } from '@zmkfirmware/zmk-studio-ts-client/core'
 import { RestoreStock } from './RestoreStock.tsx'
 import useConnectionStore from '../stores/ConnectionStore.ts'
 import undoRedoStore from '../stores/UndoRedoStore.ts'
 import { Button } from '@/components/ui/button.tsx'
-import { Settings, Power, Sun, Moon } from 'lucide-react'
+import { Settings, Power } from 'lucide-react'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -13,7 +12,6 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu.tsx'
 import { SidebarMenu, SidebarMenuItem } from '@/components/ui/sidebar.tsx'
-import { useConnectedDeviceData } from '@/services/RpcConnectionService.ts'
 import { toast } from 'sonner'
 import { callRemoteProcedureControl } from '@/services/CallRemoteProcedureControl.ts'
 
@@ -23,22 +21,9 @@ export const DeviceMenu = () => {
         setConnection,
         deviceName,
         lockState,
+        disconnect,
     } = useConnectionStore()
     const { reset } = undoRedoStore()
-    const [connectionAbort, setConnectionAbort] = useState(
-        new AbortController(),
-    )
-
-    const disconnect = useCallback(async () => {
-        if (!connection) {
-            return
-        }
-
-        await connection.request_writable.close()
-        connectionAbort.abort('User disconnected')
-        setConnectionAbort(new AbortController())
-        setConnection(null)
-    }, [connection, connectionAbort, setConnection])
 
     const resetSettings = useCallback(async () => {
         let resp = await callRemoteProcedureControl({
