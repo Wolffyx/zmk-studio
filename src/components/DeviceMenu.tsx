@@ -29,8 +29,7 @@ export const DeviceMenu = () => {
         new AbortController(),
     )
 
-    //todo fix disconnect not working
-    const disconnect2 = useCallback(async () => {
+    const disconnect = useCallback(async () => {
         if (!connection) {
             return
         }
@@ -38,7 +37,8 @@ export const DeviceMenu = () => {
         await connection.request_writable.close()
         connectionAbort.abort('User disconnected')
         setConnectionAbort(new AbortController())
-    }, [connection])
+        setConnection(null)
+    }, [connection, connectionAbort, setConnection])
 
     const resetSettings = useCallback(async () => {
         let resp = await callRemoteProcedureControl({
@@ -84,7 +84,7 @@ export const DeviceMenu = () => {
 
                     <DropdownMenuContent>
                         <DropdownMenuItem
-                            onClick={disconnect2}
+                            onClick={disconnect}
                             className="text-destructive focus:text-destructive"
                         >
                             <Power className="mr-2 h-4 w-4" />

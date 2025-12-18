@@ -1,0 +1,37 @@
+worker:
+  # Git worktree configuration
+  worktree:
+    # Enable worktree-based isolation (opt-in, default: false)
+    enabled: true
+
+    # Where to create worktrees (default: 'repo')
+    # - 'repo': Inside .patchwork-worktrees/ in the repo
+    # - 'sibling': Next to repo as {repo-name}-worktrees/
+    # - 'custom': Use customPath below
+    root: repo
+
+    # Custom path (only used when root: 'custom')
+    # customPath: /path/to/worktrees
+
+    # Base branch for new worktree branches (default: auto-detected main/master)
+    baseBranch: kanban/1-fix-the-disconect-issue
+
+    # Branch name prefix (default: 'patchwork')
+    branchPrefix: patchwork
+
+    # Cleanup behavior
+    cleanup:
+      # What to do on successful completion: 'immediate', 'delay', 'never'
+      onSuccess: delay
+
+      # What to do on failure: 'immediate', 'delay', 'never'
+      onFailure: never
+
+      # Delay in minutes before cleanup (when using 'delay')
+      delayMinutes: 30
+
+    # Maximum concurrent worktrees per project (default: 5)
+    maxConcurrent: 5
+
+    # Skip npm install if node_modules exists and package-lock unchanged
+    skipInstallIfCached: true
