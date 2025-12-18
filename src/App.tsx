@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect } from "react"
 import { ConnectModal } from "./components/Modals/ConnectModal.tsx"
 import type { RpcTransport } from "@zmkfirmware/zmk-studio-ts-client/transport/index"
 import { useEmitter, useSub } from "./helpers/usePubSub.ts"
@@ -18,9 +18,8 @@ import { toast } from "sonner"
 import { callRemoteProcedureControl } from "@/services/CallRemoteProcedureControl.ts"
 
 function App () {
-	const { connection, setConnection, setDeviceName, setLockState } = useConnectionStore()
+	const { connection, setConnection, setDeviceName, setLockState, connectionAbort } = useConnectionStore()
 	const { reset } = undoRedoStore()
-	const [ connectionAbort ] = useState( new AbortController() )
 	const { subscribe } = useEmitter()
 
 	useEffect( () => {
