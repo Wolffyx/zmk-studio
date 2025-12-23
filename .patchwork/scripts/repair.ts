@@ -1,2 +1,0 @@
-// Placeholder: Patchwork repair
-export {}
