@@ -4,7 +4,6 @@ import {
   RequestResponse
 } from "@zmkfirmware/zmk-studio-ts-client";
 import useConnectionStore from "@/stores/ConnectionStore.ts";
-import { toast } from "sonner";
 
 export const callRemoteProcedureControl = async (
   request: Omit<Request, "requestId">
@@ -12,8 +11,8 @@ export const callRemoteProcedureControl = async (
   const { connection } = useConnectionStore.getState();
 
   if (!connection) {
-    toast.error("Connection not found");
-    return;
+    console.warn("RPC call attempted without active connection");
+    return {} as RequestResponse;
   }
   // console.trace('RPC Request', conn, req);
   console.log(connection, request);

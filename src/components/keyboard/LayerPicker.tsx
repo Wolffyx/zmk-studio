@@ -1,6 +1,5 @@
 import { EllipsisVertical, Plus, Trash } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { DropIndicator, useDragAndDrop } from "react-aria-components"
 import undoRedoStore from "../../stores/UndoRedoStore.ts"
 import useConnectionStore from "../../stores/ConnectionStore.ts"
 import useLayerSelectionStore from "../../stores/LayerSelectionStore.ts"
@@ -56,7 +55,6 @@ export const LayerPicker = ( {
 	setSelectedKey,
 	setKeymap,
 	keymap,
-	...props
 }: LayerPickerProps ) => {
 	const [ editLabelData, setEditLabelData ] = useState<EditLabelData | null>( null )
 	const [ dropdownOpen, setDropdownOpen ] = useState<number | null>( null )
@@ -133,15 +131,24 @@ export const LayerPicker = ( {
 	// )
 
 	const add = useCallback( () => {
+		if ( !connection ) return
+
 		doIt?.( async () => {
 			const index = await addLayer( keymap, setKeymap, setSelectedLayerIndex )
-			return () => removeLayer( index, setKeymap )
+			if ( index < 0 ) {
+				return async () => {}
+			}
+			return async () => removeLayer( index, setKeymap )
 		} )
 	}, [ connection, doIt, keymap, setKeymap, setSelectedLayerIndex ] )
 
 
 	const remove = useCallback( ( layerIndex: number ) => {
-		if ( !keymap ) toast.error( "No keymap loaded" )
+		if ( !connection ) return
+		if ( !keymap ) {
+			toast.error( "No keymap loaded" )
+			return
+		}
 
 		const index = layerIndex
 		const layerId = keymap.layers[index].id
@@ -155,6 +162,8 @@ export const LayerPicker = ( {
 
 	const changeLayerName = useCallback(
 		( id: number, oldName: string, newName: string ) => {
+			if ( !connection ) return
+
 			doIt?.( async () => {
 				await changeName( id, newName, setKeymap )
 				return async () => {

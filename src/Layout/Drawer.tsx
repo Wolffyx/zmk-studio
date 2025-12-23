@@ -64,9 +64,14 @@ export function Drawer({}: DrawerProps) {
 
 
     useEffect(() => {
+	    if (!connection) return
+
 	    (async ()=> {
 		    console.log(123123)
-		    setKeymap(await setKeymapRequest(layouts,selectedPhysicalLayoutIndex))
+		    const result = await setKeymapRequest(layouts, selectedPhysicalLayoutIndex)
+		    if (result) {
+			    setKeymap(result)
+		    }
 	    })()
 
     }, [connection, layouts, selectedPhysicalLayoutIndex, setKeymap])

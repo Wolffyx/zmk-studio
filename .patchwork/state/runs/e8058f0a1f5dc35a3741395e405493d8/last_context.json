@@ -1,0 +1,124 @@
+{
+  "task": "Fix the disconect Issue\n**Describe the bug**\nWhen I try to disconect from the app with the disconect button the action is not working \n\n**To Reproduce**\nSteps to reproduce the behavior:\n1. Connect to the keyboard \n2. When I try to disconnect nothing happens on the platfom visualy,\n\nLogs that are listed when I press the disconect button:\n`unsub rpc_notification.core.lockStateChanged\nmain-tBeBqpiz.js:185 then test\nmain-tBeBqpiz.js:185 Closed error User disconnected`\nLogs after the disconnect was pressed:\n`{label: '7,504:24,926', request_response_readable: ReadableStream, request_writable: WritableStream, notification_readable: ReadableStream, current_request: 76} {keymap: {…}}\nmain-tBeBqpiz.js:180 unsub rpc_notification.core.lockStateChanged\nmain-tBeBqpiz.js:186 Add error undefined\naddLayer @ main-tBeBqpiz.js:186\nawait in addLayer\n(anonymous) @ main-tBeBqpiz.js:186\ndoIt @ main-tBeBqpiz.js:185\n(anonymous) @ main-tBeBqpiz.js:186\n$f @ index-FsvrOFkQ.js:37\nVf @ index-FsvrOFkQ.js:37\nBf @ index-FsvrOFkQ.js:37\nii @ index-FsvrOFkQ.js:37\nGs @ index-FsvrOFkQ.js:37\n(anonymous) @ index-FsvrOFkQ.js:37\nCo @ index-FsvrOFkQ.js:40\nws @ index-FsvrOFkQ.js:37\nMl @ index-FsvrOFkQ.js:37\nZu @ index-FsvrOFkQ.js:37\nlc @ index-FsvrOFkQ.js:37Understand this error\nmain-tBeBqpiz.js:186 Uncaught (in promise) Error: Failed to add layer:undefined\n    at addLayer (main-tBeBqpiz.js:186:287704)\n    at async main-tBeBqpiz.js:186:289985\n    at async doIt (main-tBeBqpiz.js:185:84810)`\n\n**Expected behavior**\nIt should disconnect the keyboard and reset the view\nCheck original code and find the issue why is not working (original code https://github.com/zmkfirmware/zmk-studio)\n\n**Environment (please complete the following information):**\n - OS: [e.g. iOS]\n - Browser or App chrome(thorium), didn't test on other browsers\n\n",
+  "generatedAt": "2025-12-23T20:53:05.760Z",
+  "budgets": {
+    "maxFiles": 12,
+    "maxLinesPerFile": 200,
+    "maxTotalLines": 1200,
+    "maxTotalBytes": 250000
+  },
+  "privacyMode": "standard",
+  "includedFiles": [
+    {
+      "path": "src/components/ui/sidebar.tsx",
+      "score": 360,
+      "reasons": [
+        "symbol:sidebarMenuButtonVariants",
+        "symbol:SidebarMenuButton",
+        "symbol:SidebarMenuSubButton"
+      ]
+    },
+    {
+      "path": "src/tauri/ble.ts",
+      "score": 275,
+      "reasons": [
+        "symbol:connect",
+        "symbol:disconnect",
+        "symbol:disconnect"
+      ]
+    },
+    {
+      "path": "src/tauri/serial.ts",
+      "score": 275,
+      "reasons": [
+        "symbol:connect",
+        "symbol:disconnect",
+        "symbol:disconnect"
+      ]
+    },
+    {
+      "path": "src/tauri/serial_copy.ts",
+      "score": 275,
+      "reasons": [
+        "symbol:connect",
+        "symbol:disconnect",
+        "symbol:disconnect"
+      ]
+    },
+    {
+      "path": "src/behaviors/HidUsagePicker.stories.ts",
+      "score": 275,
+      "reasons": [
+        "symbol:Keyboard",
+        "symbol:KeyboardModSelection",
+        "symbol:KeyboardAndConsumer"
+      ]
+    },
+    {
+      "path": "src/stores/ConnectionStore.ts",
+      "score": 220,
+      "reasons": [
+        "symbol:ConnectionState",
+        "symbol:connectionMiddleware",
+        "symbol:useConnectionStore"
+      ]
+    },
+    {
+      "path": "src/components/keyboard/Keyboard.tsx",
+      "score": 185,
+      "reasons": [
+        "symbol:Keyboard",
+        "symbol:KeyboardProps"
+      ]
+    },
+    {
+      "path": "src/components/ui/button.tsx",
+      "score": 180,
+      "reasons": [
+        "symbol:Button",
+        "symbol:buttonVariants"
+      ]
+    },
+    {
+      "path": "src/behaviors/BehaviorBindingPicker.tsx",
+      "score": 170,
+      "reasons": [
+        "symbol:BehaviorBindingPickerProps",
+        "symbol:BehaviorBindingPicker"
+      ]
+    },
+    {
+      "path": "src/behaviors/BehaviorParametersPicker.tsx",
+      "score": 170,
+      "reasons": [
+        "symbol:BehaviorParametersPickerProps",
+        "symbol:BehaviorParametersPicker"
+      ]
+    },
+    {
+      "path": "src/behaviors/BehaviorSelector.tsx",
+      "score": 170,
+      "reasons": [
+        "symbol:BehaviorSelectorProps",
+        "symbol:BehaviorSelector"
+      ]
+    },
+    {
+      "path": "src/services/RpcConnectionService.ts",
+      "score": 170,
+      "reasons": [
+        "symbol:connect",
+        "symbol:useConnectedDeviceData"
+      ]
+    }
+  ],
+  "blockedFiles": [],
+  "snippets": [],
+  "totals": {
+    "includedFiles": 12,
+    "blockedFiles": 0,
+    "snippets": 0,
+    "redactions": 0,
+    "totalLines": 0
+  }
+}
