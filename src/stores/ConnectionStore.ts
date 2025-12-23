@@ -59,13 +59,19 @@ const useConnectionStore = create<ConnectionState>()(
             showConnectionModal: false,
             setShowConnectionModal: (visible) => set({ showConnectionModal: visible }),
             disconnect: async () => {
-                const { connection, connectionAbort } = get();
+                const { connection, connectionAbort, resetConnection } = get();
                 if (!connection) {
                     return;
                 }
 
-                await connection.request_writable.close();
+                try {
+                    await connection.request_writable.close();
+                } catch (error) {
+                    console.warn('Failed to close connection cleanly', error);
+                }
+
                 connectionAbort.abort('User disconnected');
+                resetConnection();
                 set({ connectionAbort: new AbortController() });
             },
         })),

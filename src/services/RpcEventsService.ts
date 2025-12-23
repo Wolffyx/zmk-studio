@@ -60,6 +60,11 @@ export async function setKeymapRequest(layouts: PhysicalLayout[], selectedPhysic
 		},
 	})
 
+	if (!resp?.keymap) {
+		console.warn('setKeymapRequest: No response (connection may have been closed)')
+		return
+	}
+
 	const new_keymap = resp?.keymap?.setActivePhysicalLayout?.ok
 
 	if (!new_keymap) {

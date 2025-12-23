@@ -17,6 +17,11 @@ export async function addLayer (
 		keymap: { addLayer: {} }
 	} )
 
+	if ( !resp.keymap ) {
+		console.warn( "Add layer: No response (connection may have been closed)" )
+		return -1
+	}
+
 	if ( !resp.keymap?.addLayer?.ok ) {
 		console.error( "Add error", resp.keymap?.addLayer?.err )
 		throw new Error( "Failed to add layer:" + resp.keymap?.addLayer?.err )
@@ -44,6 +49,11 @@ export async function changeName ( layerId: number, name: string, setKeymap ) {
 		keymap: { setLayerProps: { layerId, name } }
 	} )
 
+	if ( !resp.keymap ) {
+		console.warn( "Change name: No response (connection may have been closed)" )
+		return
+	}
+
 	if (
 		resp.keymap?.setLayerProps !=
 		SetLayerPropsResponse.SET_LAYER_PROPS_RESP_OK
@@ -67,6 +77,11 @@ export async function removeLayer ( layerIndex: number, setKeymap ) {
 	const resp = await callRemoteProcedureControl( {
 		keymap: { removeLayer: { layerIndex } }
 	} )
+
+	if ( !resp.keymap ) {
+		console.warn( "Remove layer: No response (connection may have been closed)" )
+		return
+	}
 
 	if ( !resp.keymap?.removeLayer?.ok ) {
 		console.error( "Remove error", resp.keymap?.removeLayer?.err )
@@ -94,9 +109,16 @@ export async function restore (
 	} )
 
 	console.log( resp )
+
+	if ( !resp.keymap ) {
+		console.warn( "Restore layer: No response (connection may have been closed)" )
+		return
+	}
+
 	if ( !resp.keymap?.restoreLayer?.ok ) {
-		console.error( "Remove error", resp.keymap?.restoreLayer?.err )
+		console.error( "Restore error", resp.keymap?.restoreLayer?.err )
 		toast.error( "Failed to restore layer:" + resp.keymap?.restoreLayer?.err )
+		return
 	}
 
 	setKeymap(
