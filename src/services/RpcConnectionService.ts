@@ -175,7 +175,8 @@ export async function connect (
 		console.log( "callback", value )
 	} )
 		.then( () => {
-			console.log( "then test" )
+			setConnectedDeviceName( undefined )
+			setConnection( null )
 		} )
 		.catch( ( e ) => {
 			setConnectedDeviceName( undefined )
