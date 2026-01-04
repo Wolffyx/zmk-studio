@@ -143,17 +143,19 @@ export function KeyEditor({
 					<Card className="relative">
 						<CardContent className="p-4">
 							<div className="flex flex-row gap-4 w-full">
-								<BehaviorBindingPicker
-									binding={selectedBinding}
-									behaviors={Object.values(behaviors)}
-									layers={keymap?.layers.map(
-										( { id, name }, li ) => ({
-											id,
-											name: name || li.toLocaleString()
-										})
-									) || []}
-									onBindingChanged={doUpdateBinding}
-								/>
+								{selectedBinding && (
+									<BehaviorBindingPicker
+										binding={selectedBinding}
+										behaviors={Object.values(behaviors)}
+										layers={keymap?.layers.map(
+											( { id, name }, li ) => ({
+												id,
+												name: name || li.toLocaleString()
+											})
+										) || []}
+										onBindingChanged={doUpdateBinding}
+									/>
+								)}
 							</div>
 							<Button
 								variant="ghost"

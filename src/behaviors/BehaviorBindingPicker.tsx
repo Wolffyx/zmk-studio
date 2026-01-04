@@ -71,9 +71,9 @@ export const BehaviorBindingPicker = ( {
 	behaviors,
 	onBindingChanged
 }: BehaviorBindingPickerProps ) => {
-	const [ behaviorId, setBehaviorId ] = useState( binding.behaviorId )
-	const [ param1, setParam1 ] = useState<number | undefined>( binding.param1 )
-	const [ param2, setParam2 ] = useState<number | undefined>( binding.param2 )
+	const [ behaviorId, setBehaviorId ] = useState( binding?.behaviorId ?? 0 )
+	const [ param1, setParam1 ] = useState<number | undefined>( binding?.param1 )
+	const [ param2, setParam2 ] = useState<number | undefined>( binding?.param2 )
 
 	// Add state for selected keys display
 	const [ selectedKey, setSelectedKey ] = useState<number | undefined>(undefined)
@@ -86,6 +86,10 @@ export const BehaviorBindingPicker = ( {
 	)
 
 	useEffect( () => {
+		if ( !binding ) {
+			return
+		}
+
 		if ( binding.behaviorId === behaviorId && binding.param1 === param1 && binding.param2 === param2 ) {
 			return
 		}
@@ -109,6 +113,9 @@ export const BehaviorBindingPicker = ( {
 	}, [ behaviorId, param1, param2 ] )
 
 	useEffect( () => {
+		if ( !binding ) {
+			return
+		}
 		setBehaviorId( binding.behaviorId )
 		setParam1( binding.param1 )
 		setParam2( binding.param2 )
