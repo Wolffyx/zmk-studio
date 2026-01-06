@@ -37,12 +37,11 @@ export default function Keyboard({
 	useEffect( () => {
 		if ( !keymap?.layers ) return
 
-		const layer = keymap.layers.find(layer => layer.id === selectedLayerIndex)
+		console.log('Keymap changed, selectedLayerIndex:', selectedLayerIndex, 'layers count:', keymap?.layers.length)
 
-		console.log('Keymap changed, current layer:', layer, 'layers:', keymap?.layers)
-
-		if (!layer) {
-			setSelectedLayerIndex(keymap.layers[0].id)
+		// Validate that selectedLayerIndex is within bounds of the layers array
+		if ( selectedLayerIndex < 0 || selectedLayerIndex >= keymap.layers.length ) {
+			setSelectedLayerIndex( 0 )
 		}
 
 	}, [ keymap, selectedLayerIndex, setSelectedLayerIndex ] )

@@ -186,9 +186,10 @@ export const LayerPicker = ( {
 	useEffect( () => {
 		if ( !keymap?.layers ) return
 
-		const layer = keymap.layers.find( layer => layer.id === selectedLayerIndex )
-
-		if ( !layer ) setSelectedLayerIndex( keymap.layers[0].id )
+		// Validate that selectedLayerIndex is within bounds of the layers array
+		if ( selectedLayerIndex < 0 || selectedLayerIndex >= keymap.layers.length ) {
+			setSelectedLayerIndex( 0 )
+		}
 
 	}, [ keymap, selectedLayerIndex, setSelectedKey, setSelectedLayerIndex ] )
 
